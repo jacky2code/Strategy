@@ -1,20 +1,20 @@
 '''
-Author: Jakcy Chang
+Author: Jacky Chang
 Date: 2022-10-20 16:04:54
-LastEditors: Jakcy Chang
+LastEditors: Jacky Chang
 LastEditTime: 2022-10-28 17:57:52
 Description: 
 '''
 '''
-## 5分钟级别、三均线策略
-- 10, 20, 120 均线
+## 60分钟级别、三均线策略
+- 7, 30, 120 均线
 - 120 均线做 多空 过滤
 - MA120之上
-  - MA10 上穿 MA20 金叉 做多
-  - MA10 下穿 MA20 死叉 平多
+  - MA7 上穿 MA30 金叉 做多
+  - MA7 下穿 MA30 死叉 平多
 - MA120之下
-  - MA10 下穿 MA20 死叉 做空
-  - MA10 上穿 MA20 金叉 平空
+  - MA7 下穿 MA30 死叉 做空
+  - MA7 上穿 MA30 金叉 平空
 - Strategy_TripleMa_v0.1.py
 '''
 from vnpy.trader.constant import Interval, Direction, Offset
@@ -33,7 +33,7 @@ from vnpy.app.cta_strategy import (
 
 
 class JackyStrategyTripleMa01(CtaTemplate):
-    author = "用Python的交易员"
+    author = "Jacky"
     
     bar_window = 60
     fast_window = 7
@@ -136,7 +136,6 @@ class JackyStrategyTripleMa01(CtaTemplate):
         filter_ma = am.sma(self.filter_window, array=True)
         self.filter_ma0 = filter_ma[-1]
         self.filter_ma1 = filter_ma[-2]
-        # print('filter_ma0 ====  ', self.filter_ma0)
 
         # 上穿
         cross_over = (self.fast_ma0 > self.slow_ma0) and (self.fast_ma1 < self.slow_ma1)
@@ -149,7 +148,6 @@ class JackyStrategyTripleMa01(CtaTemplate):
         #   - MA10 下穿 MA20 死叉 平多
         # filter_up = (self.fast_ma0 > self.filter_ma0) and (self.fast_ma1 > self.filter_ma0) and (self.slow_ma0 > self.filter_ma0) and (self.slow_ma1 > self.filter_ma0) 
         filter_up = bar.close_price > self.filter_ma0
-        # print('filter_up ======= ', filter_up)
         
         
         # - MA120之下
@@ -157,11 +155,10 @@ class JackyStrategyTripleMa01(CtaTemplate):
         #   - MA10 上穿 MA20 金叉 平空
         # filter_down = (self.fast_ma0 < self.filter_ma0) and (self.fast_ma1 < self.filter_ma0) and (self.slow_ma0 < self.filter_ma0) and (self.slow_ma1 < self.filter_ma0)
         filter_down = bar.close_price < self.filter_ma0
-        # print('filter_down ====== ', filter_down)
 
-        # 120 趋势线向上走，不开空单
+        # 120 趋势线向上走，不开空单--待优化
         filter_up_run = self.filter_ma0 >= self.filter_ma1
-        # 120 趋势线向下走，不开多单
+        # 120 趋势线向下走，不开多单--待优化
         filter_down_run = self.filter_ma0 <= self.filter_ma1
 
         # 为开仓，执行开仓条件
@@ -184,35 +181,6 @@ class JackyStrategyTripleMa01(CtaTemplate):
                 else:
                     self.cover(self.short_entry_price * (1-self.per_win), abs(self.pos))                #   空单止盈
                     self.cover(self.short_entry_price * (1+self.per_lose), abs(self.pos), stop=True)     #   空头进场后，上涨1%止损
-
-        # else:
-        #     if cross_below and filter_up and self.pos > 0:      
-        #         self.sell(bar.close_price, abs(self.pos))
-        #     if cross_over and filter_down and self.pos < 0:     #   金叉平空
-        #         self.cover(bar.close_price, abs(self.pos))
-
-
-        # if filter_up:
-        #     if cross_over:                          #   金叉做多
-        #         if self.pos == 0:
-        #             self.buy(bar.close_price, 1)
-        #         elif self.pos < 0:
-        #             self.cover(bar.close_price, 1)
-        #             self.buy(bar.close_price, 1)
-        #     elif cross_below:                       #   死叉平多
-        #         if self.pos > 0:
-        #             self.sell(bar.close_price, 1)
-
-        # if filter_down:
-        #     if cross_below:                         #   死叉做空
-        #         if self.pos == 0:                     
-        #             self.short(bar.close_price, 1)
-        #         if self.pos > 0:
-        #             self.sell(bar.close_price, 1)
-        #             self.short(bar.close_price, 1)
-        #     elif cross_over:                        #   金叉平空
-        #         if self.pos < 0:
-        #             self.cover(bar.close_price, 1)
             
         self.put_event()
 
