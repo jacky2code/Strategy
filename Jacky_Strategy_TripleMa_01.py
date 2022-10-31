@@ -35,14 +35,15 @@ from vnpy.app.cta_strategy import (
 class JackyStrategyTripleMa01(CtaTemplate):
     author = "Jacky"
     
-    bar_window = 60
+    # bar_window = 60     #   实盘使用分钟线
+    bar_window = 1      #   回测使用1小时线，数据加载快
     fast_window = 7
     slow_window = 30
     filter_window = 120
     # 每次开仓资金，计算开仓数量
-    trade_money = 10
+    trade_money = 5
     # 止盈百分比
-    per_win = 0.07
+    per_win = 0.16
     # 止损百分比
     per_lose = 0.01
 
@@ -65,7 +66,7 @@ class JackyStrategyTripleMa01(CtaTemplate):
     filter_ma0 = 0.0
     filter_ma1 = 0.0
 
-    parameters = ["bar_window", "fast_window", "slow_window", "filter_window", "trade_money", "per_win","per_lose"]
+    parameters = ["bar_window", "trade_money", "fast_window", "slow_window", "filter_window", "trade_money", "per_win","per_lose"]
     variables = ["fast_ma0", "fast_ma1", "slow_ma0", "slow_ma1", "filter_ma0", "filter_ma1"]
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
@@ -76,8 +77,9 @@ class JackyStrategyTripleMa01(CtaTemplate):
         self.bg = BarGenerator(
             self.on_bar, 
             window=self.bar_window, 
-            on_window_bar=self.on_min_bar, 
-            interval=Interval.MINUTE
+            # on_window_bar=self.on_min_bar, 
+            # interval=Interval.MINUTE
+            interval=Interval.HOUR      #   回测用小时线
         )
         # 初始化 120根柱状图
         self.am = ArrayManager(200)
@@ -112,10 +114,10 @@ class JackyStrategyTripleMa01(CtaTemplate):
         """
         self.bg.update_tick(tick)
     
-    def on_bar(self, bar:BarData):
-        self.bg.update_bar(bar)
+    # def on_bar(self, bar:BarData):
+    #     self.bg.update_bar(bar)
 
-    def on_min_bar(self, bar: BarData):
+    def on_bar(self, bar: BarData):
         """
         Callback of new bar data update.
         """
@@ -172,8 +174,9 @@ class JackyStrategyTripleMa01(CtaTemplate):
                 if cross_below:
                     self.sell(bar.close_price, abs(self.pos))   #   死叉平多
                 else:   
-                    self.sell(self.long_entry_price * (1-self.per_lose), abs(self.pos), stop=True)       #   多头进场后，下跌%1止损
                     self.sell(self.long_entry_price * (1+self.per_win), abs(self.pos))                  #   多单止盈
+                    self.sell(self.long_entry_price * (1-self.per_lose), abs(self.pos), stop=True)       #   多头进场后，下跌%1止损
+                    
         elif self.pos < 0:
             if filter_down:
                 if cross_over:
